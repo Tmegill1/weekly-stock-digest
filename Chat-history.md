@@ -95,6 +95,23 @@ A trimmed record of what was done in each session and PR, with key decisions and
 
 ## PR Log
 
-### PR #2 — feat/phase1-ingestion-pipeline *(in progress)*
-**Status:** Open
-**What it will contain:** `src/wsd/` Python package — config, db, utils, ingestion (universe, EDGAR, prices), quality checks. `pyproject.toml`, `data/sp500_historical.csv`, full test suite.
+### PR #2 — feat/phase1-ingestion-pipeline
+**Status:** Open — ready for review
+**Date:** 2026-05-30
+
+**What it contains:**
+- `pyproject.toml` — package config, all dependencies (supabase, yfinance, requests, pandas, dotenv)
+- `src/wsd/config.py` — `Settings` dataclass, reads `.env`, raises `ValueError` on missing vars, 5-year price window enforced via `price_start_date` property
+- `src/wsd/db.py` — Supabase client singleton, four idempotent upsert helpers (`upsert_companies`, `upsert_prices`, `upsert_filings`, `insert_quality_log`)
+- `src/wsd/utils.py` — `RateLimiter` (token bucket, 8 req/s), `@retry` decorator (3 attempts, exp backoff, 60s on 429), `edgar_get()` helper
+- `src/wsd/ingestion/universe.py` — reads `data/sp500_historical.csv`, validates rows, upserts into `companies`
+- `src/wsd/ingestion/edgar.py` — calls EDGAR REST API per CIK, filters to 8-K/10-Q/10-K/Form 4, enforces `filed_date` (never `period_date`) as public availability date
+- `src/wsd/ingestion/prices.py` — yfinance batched download (50 tickers/batch), 5-year window, incremental updates, validates adj_close > 0 and high >= low
+- `src/wsd/quality/checks.py` — stale price, price anomaly (>50% move), missing 10-Q checks → `data_quality_log`
+- `data/sp500_historical.csv` — 503 S&P 500 companies with zero-padded CIKs
+- **39/39 tests passing**
+
+**Key decisions made:**
+- `.not_` in supabase-py is an attribute not a method — mock chain uses `.not_.is_` not `.not_.return_value.is_`
+- yfinance `group_by="ticker"` used for multi-ticker batch downloads
+- Windows Python at `/mnt/c/Python312/python.exe` (WSL environment)
