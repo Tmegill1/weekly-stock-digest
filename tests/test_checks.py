@@ -5,7 +5,7 @@ from datetime import date, timedelta
 def test_check_stale_prices_flags_old_data():
     from wsd.quality.checks import _check_stale_prices
     old_date = (date.today() - timedelta(days=10)).isoformat()
-    logs = _check_stale_prices([{"company_id": "uuid-1", "max": old_date}])
+    logs = _check_stale_prices([{"company_id": "uuid-1", "max_date": old_date}])
     assert len(logs) == 1
     assert logs[0]["check_type"] == "stale_price"
     assert logs[0]["severity"] == "error"
@@ -15,7 +15,7 @@ def test_check_stale_prices_flags_old_data():
 def test_check_stale_prices_ignores_recent_data():
     from wsd.quality.checks import _check_stale_prices
     recent = (date.today() - timedelta(days=2)).isoformat()
-    assert _check_stale_prices([{"company_id": "uuid-1", "max": recent}]) == []
+    assert _check_stale_prices([{"company_id": "uuid-1", "max_date": recent}]) == []
 
 
 def test_check_price_anomalies_flags_large_moves():

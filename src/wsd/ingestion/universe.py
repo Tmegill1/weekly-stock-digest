@@ -25,7 +25,20 @@ def load_universe(settings: Settings, csv_path: Path | None = None) -> dict:
                 continue
             rows.append(row)
 
-    upserted = db.upsert_companies(rows, settings)
+    # Deduplicate on (cik, entry_date) — dual-class shares (e.g. FOXA/FOX)
+    # share a CIK; keep only the first ticker encountered.
+    seen: set[tuple] = set()
+    deduped: list[dict] = []
+    for row in rows:
+        key = (row.get("cik"), row["entry_date"])
+        if key in seen:
+            print(f"  INFO dedup: skipping {row['ticker']} (same CIK+entry_date as earlier row)")
+            skipped += 1
+            continue
+        seen.add(key)
+        deduped.append(row)
+
+    upserted = db.upsert_companies(deduped, settings)
     return {"upserted": upserted, "skipped": skipped}
 
 

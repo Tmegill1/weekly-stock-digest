@@ -13,7 +13,7 @@ def run_checks(settings: Settings) -> dict:
     client = db.get_client(settings)
     logs: list[dict] = []
 
-    stale_rows = client.table("prices").select("company_id, trading_date.max()").execute().data
+    stale_rows = client.rpc("max_trading_dates").execute().data or []
     logs.extend(_check_stale_prices(stale_rows))
 
     cutoff_anomaly = (date.today() - timedelta(days=ANOMALY_LOOKBACK_DAYS)).isoformat()
@@ -61,7 +61,7 @@ def _check_stale_prices(rows: list[dict]) -> list[dict]:
     cutoff = (date.today() - timedelta(days=STALE_THRESHOLD_DAYS)).isoformat()
     logs: list[dict] = []
     for row in rows:
-        max_date = row.get("max")
+        max_date = row.get("max_date")
         if max_date and max_date < cutoff:
             logs.append({
                 "check_type": "stale_price",

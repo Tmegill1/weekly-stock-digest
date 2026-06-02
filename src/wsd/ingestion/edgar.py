@@ -62,13 +62,16 @@ def _parse_filing_block(block: dict, company_id: str, cik: str) -> list[dict]:
     ):
         if form not in TARGET_FORMS:
             continue
+        # Null out period_date if it's after filed_date (EDGAR data quality issue
+        # seen on some Form 4s where reportDate > filingDate)
+        safe_period = (period or None) if (not period or period <= filed) else None
         rows.append({
             "company_id": company_id,
             "cik": cik,
             "accession_number": accession,
             "form_type": form,
             "filed_date": filed,        # public availability date — always filed_date
-            "period_date": period or None,
+            "period_date": safe_period,
             "filing_url": f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type={form}",
             "is_parsed": False,
         })
