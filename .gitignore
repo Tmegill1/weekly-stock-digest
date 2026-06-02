@@ -25,6 +25,9 @@ htmlcov/
 # Claude Code
 .claude/
 
+# Brainstorming session files
+.superpowers/
+
 # IDE
 .vscode/
 .idea/
