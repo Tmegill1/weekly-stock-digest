@@ -34,6 +34,8 @@ def extract_event_from_text(
     settings: Settings,
 ) -> dict | None:
     """Call Claude Haiku to extract a structured event from free text. Returns dict or None."""
+    if not settings.anthropic_api_key:
+        return None
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     prompt = _EXTRACTION_PROMPT.format(
         text=section_text[:3000],
