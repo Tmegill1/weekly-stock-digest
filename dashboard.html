@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WSD Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; max-width: 1000px; margin: 0 auto; }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #21262d; }
+  .header h1 { font-size: 18px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .header .subtitle { font-size: 12px; color: #8b949e; margin-top: 2px; }
+  .refresh-btn { background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+  .refresh-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+
+  .section-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #8b949e; margin-bottom: 12px; }
+
+  /* CURRENT FOCUS */
+  .current-focus { background: #0d1f38; border: 1px solid #1f4b8f; border-radius: 10px; padding: 20px 24px; margin-bottom: 14px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 20px; }
+  .phase-number { width: 52px; height: 52px; border-radius: 50%; background: #1f4b8f; border: 2px solid #58a6ff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #58a6ff; flex-shrink: 0; }
+  .focus-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .focus-subtitle { font-size: 13px; color: #8b949e; margin-bottom: 10px; }
+  .working-on-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #484f58; margin-bottom: 6px; }
+  .working-on-item { display: inline-flex; align-items: center; gap: 6px; background: #0d2a4a; border: 1px solid #1f4b8f; border-radius: 6px; padding: 5px 10px; font-size: 12px; color: #58a6ff; }
+  .focus-progress-wrap { text-align: right; min-width: 140px; }
+  .focus-progress-label { font-size: 11px; color: #8b949e; margin-bottom: 6px; }
+  .focus-progress-bar { width: 120px; height: 6px; background: #21262d; border-radius: 3px; margin-left: auto; }
+  .focus-progress-fill { height: 100%; border-radius: 3px; background: #58a6ff; transition: width 0.4s; }
+  .focus-pct { font-size: 20px; font-weight: 700; color: #58a6ff; margin-top: 6px; }
+
+  /* PHASE STRIP */
+  .phase-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 28px; }
+  .phase-tile { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 14px; position: relative; }
+  .phase-tile.done   { border-top: 3px solid #238636; }
+  .phase-tile.active { border-top: 3px solid #58a6ff; background: #0d1a2e; }
+  .phase-tile.pending{ border-top: 3px solid #30363d; opacity: 0.55; }
+  .tile-num { font-size: 10px; color: #8b949e; margin-bottom: 4px; letter-spacing: 0.08em; }
+  .tile-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .tile-tasks { display: flex; flex-direction: column; gap: 3px; }
+  .tile-task { font-size: 11px; display: flex; align-items: center; gap: 5px; }
+  .tile-task.done    { color: #3fb950; }
+  .tile-task.pending { color: #484f58; }
+  .tile-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
+  .tile-badge.done    { background: #0f2a1a; color: #3fb950; }
+  .tile-badge.active  { background: #0d1f38; color: #58a6ff; }
+  .tile-badge.pending { background: #161b22; color: #484f58; }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .stat-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 14px; }
+  .stat-value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-value.green  { color: #3fb950; }
+  .stat-value.blue   { color: #58a6ff; }
+  .stat-value.purple { color: #bc8cff; }
+  .stat-label { font-size: 11px; color: #8b949e; margin-top: 4px; }
+  .stat-sub   { font-size: 10px; color: #484f58; margin-top: 2px; }
+
+  /* QUALITY ROW */
+  .quality-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 28px; }
+  .quality-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .quality-label { font-size: 12px; color: #8b949e; }
+  .quality-count { font-size: 20px; font-weight: 700; }
+  .count-zero  { color: #3fb950; }
+  .count-warn  { color: #d29922; }
+  .count-error { color: #f85149; }
+
+  /* DB TABLE CARDS */
+  .table-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+  .table-card-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #21262d; }
+  .table-title { font-size: 13px; font-weight: 600; }
+  .table-meta { display: flex; gap: 16px; align-items: center; }
+  .table-count { font-size: 11px; color: #8b949e; }
+  .expand-hint { font-size: 11px; color: #484f58; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #8b949e; font-weight: 500; padding: 10px 16px; border-bottom: 1px solid #21262d; text-align: left; background: #0d1117; }
+  tbody tr { border-bottom: 1px solid #1a1f27; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #1c2129; }
+  tbody td { padding: 10px 16px; font-size: 12px; vertical-align: middle; }
+  .ticker { font-weight: 700; font-family: monospace; font-size: 12px; }
+  .name-sub { color: #8b949e; font-size: 11px; margin-top: 1px; }
+  .date { color: #8b949e; font-size: 12px; font-family: monospace; }
+  .date-sub { color: #484f58; font-size: 10px; margin-top: 1px; }
+  .sector-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; color: #8b949e; background: #21262d; }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .badge-8k    { background: #1a2f4a; color: #58a6ff; }
+  .badge-10q   { background: #1f3a1f; color: #3fb950; }
+  .badge-10k   { background: #3a2a0f; color: #d29922; }
+  .badge-form4 { background: #2a1f3a; color: #bc8cff; }
+  .badge-insider-buy  { background: #0f2a1a; color: #3fb950; }
+  .badge-insider-sell { background: #2a0f0f; color: #f85149; }
+  .badge-earnings     { background: #1a2f4a; color: #58a6ff; }
+  .badge-guidance     { background: #3a2a0f; color: #d29922; }
+  .badge-corporate    { background: #2a1f3a; color: #bc8cff; }
+  .badge-executive    { background: #1f2a3a; color: #79c0ff; }
+  .badge-capital      { background: #1a2f1a; color: #3fb950; }
+  .sentiment-positive { color: #3fb950; font-size: 11px; }
+  .sentiment-negative { color: #f85149; font-size: 11px; }
+  .sentiment-neutral  { color: #8b949e; font-size: 11px; }
+  .show-more { padding: 10px 16px; text-align: center; font-size: 11px; color: #484f58; border-top: 1px solid #21262d; cursor: pointer; }
+  .show-more:hover { color: #58a6ff; }
+  .loading { color: #484f58; font-style: italic; }
+  .footer { margin-top: 20px; font-size: 11px; color: #484f58; text-align: right; }
+</style>
+</head>
+<body>
+
+<script>
+  const SUPABASE_URL = "https://ypvwatcztbubwrpojpan.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwdndhdGN6dGJ1YndycG9qcGFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDg0NzIsImV4cCI6MjA5NTcyNDQ3Mn0.xQgdYLmF_8C17ZYdi6aTwZXPXVSIXinzNe5Zwmqv80k";
+
+  const HEADERS = {
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+  };
+
+  async function query(table, params = "") {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: HEADERS });
+    if (!resp.ok) throw new Error(`${table}: ${resp.status}`);
+    return resp.json();
+  }
+
+  async function queryCount(table, filter = "") {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+      headers: { ...HEADERS, "Prefer": "count=exact", "Range": "0-0" }
+    });
+    const range = resp.headers.get("Content-Range") || "0/0";
+    return parseInt(range.split("/")[1]) || 0;
+  }
+
+  function relDate(d) {
+    const days = Math.floor((Date.now() - new Date(d)) / 86400000);
+    return days === 0 ? "today" : days === 1 ? "yesterday" : `${days}d ago`;
+  }
+
+  function formBadge(ft) {
+    const cls = ft === "8-K" ? "badge-8k" : ft === "10-Q" ? "badge-10q" : ft === "10-K" ? "badge-10k" : "badge-form4";
+    return `<span class="badge ${cls}">${ft}</span>`;
+  }
+
+  function eventBadge(code) {
+    const cat = code.startsWith("insider_buy") ? "insider-buy"
+      : code.startsWith("insider_sell") ? "insider-sell"
+      : code.startsWith("earnings") ? "earnings"
+      : code.startsWith("guidance") ? "guidance"
+      : (code.startsWith("ceo") || code.startsWith("cfo") || code.startsWith("executive")) ? "executive"
+      : code.startsWith("buyback") || code.startsWith("dividend") ? "capital"
+      : "corporate";
+    return `<span class="badge badge-${cat}">${code.replace(/_/g, " ")}</span>`;
+  }
+
+  async function loadStats() {
+    const [companies, prices, filings, events, parsedCount, qErrors, qWarnings] = await Promise.all([
+      queryCount("companies"),
+      queryCount("prices"),
+      queryCount("filings"),
+      queryCount("events"),
+      queryCount("filings", "is_parsed=eq.true"),
+      queryCount("data_quality_log", "resolved_at=is.null&severity=eq.error"),
+      queryCount("data_quality_log", "resolved_at=is.null&severity=eq.warning"),
+    ]);
+
+    document.getElementById("stat-companies").textContent = companies.toLocaleString();
+    document.getElementById("stat-prices").textContent = prices > 1e6 ? (prices/1e6).toFixed(1)+"M" : prices.toLocaleString();
+    document.getElementById("stat-filings").textContent = filings > 1000 ? Math.round(filings/1000)+"K" : filings.toLocaleString();
+    document.getElementById("stat-events").textContent = events > 1000 ? Math.round(events/1000)+"K" : events.toLocaleString();
+
+    const pct = filings > 0 ? Math.round(parsedCount / filings * 100) : 0;
+    document.getElementById("phase2-pct").textContent = pct + "%";
+    document.getElementById("phase2-bar").style.width = pct + "%";
+    document.getElementById("phase2-label").textContent = `${parsedCount.toLocaleString()} / ${filings.toLocaleString()} filings parsed`;
+
+    const errEl = document.getElementById("quality-errors");
+    errEl.textContent = qErrors;
+    errEl.className = "quality-count " + (qErrors > 0 ? "count-error" : "count-zero");
+
+    const warnEl = document.getElementById("quality-warnings");
+    warnEl.textContent = qWarnings;
+    warnEl.className = "quality-count " + (qWarnings > 0 ? "count-warn" : "count-zero");
+  }
+
+  let offsets = { filings: 0, events: 0, companies: 0 };
+
+  async function loadFilings(offset = 0) {
+    const rows = await query("filings",
+      `select=form_type,filed_date,companies(ticker,name)&order=filed_date.desc&limit=5&offset=${offset}`);
+    const tbody = document.getElementById("filings-tbody");
+    if (offset === 0) tbody.innerHTML = "";
+    rows.forEach(r => {
+      const co = r.companies || {};
+      tbody.innerHTML += `<tr>
+        <td><div class="ticker">${co.ticker||"—"}</div><div class="name-sub">${co.name||""}</div></td>
+        <td>${formBadge(r.form_type)}</td>
+        <td><div class="date">${r.filed_date}</div><div class="date-sub">${relDate(r.filed_date)}</div></td>
+      </tr>`;
+    });
+    const count = await queryCount("filings");
+    document.getElementById("filings-count").textContent = count.toLocaleString() + " rows";
+  }
+
+  async function loadEvents(offset = 0) {
+    const rows = await query("events",
+      `select=event_code,sentiment,filed_date,extracted_by,companies(ticker)&order=filed_date.desc&limit=5&offset=${offset}`);
+    const tbody = document.getElementById("events-tbody");
+    if (offset === 0) tbody.innerHTML = "";
+    rows.forEach(r => {
+      const co = r.companies || {};
+      tbody.innerHTML += `<tr>
+        <td><div class="ticker">${co.ticker||"—"}</div></td>
+        <td>${eventBadge(r.event_code)}</td>
+        <td><span class="sentiment-${r.sentiment}">${r.sentiment}</span></td>
+        <td><div class="date">${r.filed_date}</div><div class="date-sub">${relDate(r.filed_date)}</div></td>
+        <td><span style="font-size:10px;color:#484f58">${r.extracted_by}</span></td>
+      </tr>`;
+    });
+    const count = await queryCount("events");
+    document.getElementById("events-count").textContent = count.toLocaleString() + " rows";
+  }
+
+  async function loadCompanies(offset = 0) {
+    const rows = await query("companies",
+      `select=ticker,name,sector,entry_date,exit_date&order=entry_date.desc&limit=5&offset=${offset}`);
+    const tbody = document.getElementById("companies-tbody");
+    if (offset === 0) tbody.innerHTML = "";
+    rows.forEach(r => {
+      tbody.innerHTML += `<tr>
+        <td><div class="ticker">${r.ticker}</div></td>
+        <td><div style="font-size:12px">${r.name}</div></td>
+        <td><span class="sector-badge">${r.sector||"—"}</span></td>
+        <td><div class="date">${r.entry_date}</div></td>
+        <td><span style="color:${r.exit_date?"#f85149":"#3fb950"};font-size:11px">● ${r.exit_date?"Exited":"Active"}</span></td>
+      </tr>`;
+    });
+    const count = await queryCount("companies");
+    document.getElementById("companies-count").textContent = count.toLocaleString() + " rows";
+  }
+
+  async function refresh() {
+    document.getElementById("last-refresh").textContent = "Refreshing...";
+    offsets = { filings: 0, events: 0, companies: 0 };
+    await Promise.all([loadStats(), loadFilings(), loadEvents(), loadCompanies()]);
+    document.getElementById("last-refresh").textContent = "Last refreshed: " + new Date().toLocaleTimeString();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    refresh();
+    document.getElementById("btn-refresh").onclick = refresh;
+    document.getElementById("btn-more-filings").onclick   = () => { offsets.filings   += 5; loadFilings(offsets.filings); };
+    document.getElementById("btn-more-events").onclick    = () => { offsets.events    += 5; loadEvents(offsets.events); };
+    document.getElementById("btn-more-companies").onclick = () => { offsets.companies += 5; loadCompanies(offsets.companies); };
+  });
+</script>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1>Weekly Stock Digest</h1>
+    <div class="subtitle">Development Dashboard · Local</div>
+  </div>
+  <button class="refresh-btn" id="btn-refresh">↻ Refresh</button>
+</div>
+
+<!-- CURRENT FOCUS HERO -->
+<div class="section-label">Current Focus</div>
+<div class="current-focus">
+  <div class="phase-number">2</div>
+  <div>
+    <div class="focus-title">Phase 2 — Event Extraction</div>
+    <div class="focus-subtitle">Parse SEC filings → structured events</div>
+    <div class="working-on-label">Up next</div>
+    <span class="working-on-item">→ Run full historical backfill</span>
+  </div>
+  <div class="focus-progress-wrap">
+    <div class="focus-progress-label" id="phase2-label">Loading…</div>
+    <div class="focus-progress-bar"><div class="focus-progress-fill" id="phase2-bar" style="width:0%"></div></div>
+    <div class="focus-pct" id="phase2-pct">—</div>
+  </div>
+</div>
+
+<!-- PHASE STRIP -->
+<div class="section-label">All Phases</div>
+<div class="phase-strip">
+  <div class="phase-tile done">
+    <span class="tile-badge done">✓ Done</span>
+    <div class="tile-num">Phase 1</div>
+    <div class="tile-name">Data Foundation</div>
+    <div class="tile-tasks">
+      <div class="tile-task done">✓ config + db layer</div>
+      <div class="tile-task done">✓ universe ingestor</div>
+      <div class="tile-task done">✓ EDGAR ingestor</div>
+      <div class="tile-task done">✓ prices ingestor</div>
+      <div class="tile-task done">✓ quality checks</div>
+      <div class="tile-task done">✓ 40 tests passing</div>
+    </div>
+  </div>
+  <div class="phase-tile active">
+    <span class="tile-badge active">▶ Now</span>
+    <div class="tile-num">Phase 2</div>
+    <div class="tile-name">Event Extraction</div>
+    <div class="tile-tasks">
+      <div class="tile-task done">✓ migration + schema</div>
+      <div class="tile-task done">✓ downloader</div>
+      <div class="tile-task done">✓ Form 4 parser</div>
+      <div class="tile-task done">✓ 8-K parser</div>
+      <div class="tile-task done">✓ 10-Q/10-K parsers</div>
+      <div class="tile-task done">✓ orchestrator</div>
+    </div>
+  </div>
+  <div class="phase-tile pending">
+    <span class="tile-badge pending">Pending</span>
+    <div class="tile-num">Phase 3</div>
+    <div class="tile-name">Scoring + Backtest</div>
+    <div class="tile-tasks">
+      <div class="tile-task pending">○ event scoring</div>
+      <div class="tile-task pending">○ weekly picks</div>
+      <div class="tile-task pending">○ backtest engine</div>
+      <div class="tile-task pending">○ validation</div>
+    </div>
+  </div>
+  <div class="phase-tile pending">
+    <span class="tile-badge pending">Pending</span>
+    <div class="tile-num">Phase 4</div>
+    <div class="tile-name">Digest Output</div>
+    <div class="tile-tasks">
+      <div class="tile-task pending">○ digest template</div>
+      <div class="tile-task pending">○ Claude API</div>
+      <div class="tile-task pending">○ email delivery</div>
+    </div>
+  </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="section-label">Live Data Health</div>
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value green" id="stat-companies">…</div>
+    <div class="stat-label">Companies</div>
+    <div class="stat-sub">in universe</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value blue" id="stat-prices">…</div>
+    <div class="stat-label">Price Rows</div>
+    <div class="stat-sub">5yr OHLCV</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value blue" id="stat-filings">…</div>
+    <div class="stat-label">Filings</div>
+    <div class="stat-sub">8-K · 10-Q · 10-K · Form 4</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value purple" id="stat-events">…</div>
+    <div class="stat-label">Events Extracted</div>
+    <div class="stat-sub">Phase 2</div>
+  </div>
+</div>
+
+<div class="quality-row">
+  <div class="quality-card">
+    <div>
+      <div class="quality-label">Quality Errors</div>
+      <div style="font-size:10px;color:#484f58;margin-top:2px">unresolved · high severity</div>
+    </div>
+    <div class="quality-count count-zero" id="quality-errors">…</div>
+  </div>
+  <div class="quality-card">
+    <div>
+      <div class="quality-label">Quality Warnings</div>
+      <div style="font-size:10px;color:#484f58;margin-top:2px">unresolved · low severity</div>
+    </div>
+    <div class="quality-count count-warn" id="quality-warnings">…</div>
+  </div>
+</div>
+
+<!-- DATABASE TABLES -->
+<div class="section-label">Database — Recent Rows</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <span class="table-title">events</span>
+    <div class="table-meta">
+      <span class="table-count" id="events-count">…</span>
+      <span class="expand-hint">▾ latest 5</span>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Company</th><th>Event</th><th>Sentiment</th><th>Filed</th><th>Source</th></tr></thead>
+    <tbody id="events-tbody"><tr><td colspan="5" class="loading" style="padding:16px">Loading…</td></tr></tbody>
+  </table>
+  <div class="show-more" id="btn-more-events">Show 5 more ↓</div>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <span class="table-title">filings</span>
+    <div class="table-meta">
+      <span class="table-count" id="filings-count">…</span>
+      <span class="expand-hint">▾ latest 5</span>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Company</th><th>Form</th><th>Filed</th></tr></thead>
+    <tbody id="filings-tbody"><tr><td colspan="3" class="loading" style="padding:16px">Loading…</td></tr></tbody>
+  </table>
+  <div class="show-more" id="btn-more-filings">Show 5 more ↓</div>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <span class="table-title">companies</span>
+    <div class="table-meta">
+      <span class="table-count" id="companies-count">…</span>
+      <span class="expand-hint">▾ latest 5</span>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Ticker</th><th>Name</th><th>Sector</th><th>Added</th><th>Status</th></tr></thead>
+    <tbody id="companies-tbody"><tr><td colspan="5" class="loading" style="padding:16px">Loading…</td></tr></tbody>
+  </table>
+  <div class="show-more" id="btn-more-companies">Show 5 more ↓</div>
+</div>
+
+<div class="footer" id="last-refresh">Last refreshed: —</div>
+
+</body>
+</html>
