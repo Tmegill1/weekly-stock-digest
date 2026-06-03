@@ -7,6 +7,7 @@ def settings(monkeypatch):
     monkeypatch.setenv("SUPABASE_URL", "https://test.supabase.co")
     monkeypatch.setenv("SUPABASE_SERVICE_KEY", "test-key")
     monkeypatch.setenv("EDGAR_USER_AGENT", "Test User test@test.com")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
     from wsd.config import Settings
     return Settings()
 
