@@ -52,3 +52,19 @@ def insert_quality_log(rows: list[dict], settings: Settings) -> None:
     if not rows:
         return
     get_client(settings).table("data_quality_log").insert(rows).execute()
+
+
+def upsert_events(rows: list[dict], settings: Settings) -> int:
+    if not rows:
+        return 0
+    result = (
+        get_client(settings)
+        .table("events")
+        .upsert(rows, on_conflict="filing_id,event_code")
+        .execute()
+    )
+    return len(result.data)
+
+
+def mark_filing_parsed(filing_id: str, settings: Settings) -> None:
+    get_client(settings).table("filings").update({"is_parsed": True}).eq("id", filing_id).execute()
