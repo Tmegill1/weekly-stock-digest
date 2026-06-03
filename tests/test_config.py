@@ -47,14 +47,14 @@ def test_settings_raises_on_missing_edgar_user_agent(monkeypatch):
         Settings()
 
 
-def test_settings_raises_on_missing_anthropic_key(monkeypatch):
+def test_settings_anthropic_key_optional(monkeypatch):
     monkeypatch.setenv("SUPABASE_URL", "https://test.supabase.co")
     monkeypatch.setenv("SUPABASE_SERVICE_KEY", "test-key")
     monkeypatch.setenv("EDGAR_USER_AGENT", "Test User test@test.com")
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     from wsd.config import Settings
-    with pytest.raises(ValueError, match="ANTHROPIC_API_KEY"):
-        Settings()
+    s = Settings()
+    assert s.anthropic_api_key == ""
 
 
 def test_price_start_date_is_five_years_ago(monkeypatch):
